@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const verify = require('jsonwebtoken/verify');
 const middlewareWrapper = require('cors');
@@ -24,13 +24,25 @@ async function run() {
         await client.connect();
         const toolsCollection = client.db('tools_manufacturer').collection('tools');
 
+
+        // All Tools Api
         app.get('/tools', async (req, res) => {
             const query = {};
-            
-        })
+            const cursor = toolsCollection.find(query);
+            const tools = await cursor.toArray();
+            res.send(tools);
+        });
+
+        // individual call tools api
+        app.get('/tools/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const tool = await toolsCollection.findOne(query);
+            res.send(tool);
+        });
     }
     finally {
-        
+
     }
 }
 
