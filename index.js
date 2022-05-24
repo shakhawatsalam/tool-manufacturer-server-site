@@ -14,6 +14,28 @@ app.use(cors());
 app.use(express.json());
 
 
+
+//verifyJWT
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ massage: 'unauthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            console.log(err)
+            return res.status(403).send({ massage: 'Forbidden access!!!', error: true });
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+
+
+}
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rxy3e.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -63,7 +85,21 @@ async function run() {
             console.log(order);
             const result = await orderCollection.insertOne(order);
             res.send({ success: true, result });
-        })
+        });
+        // My Order Api
+        app.get('/order', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.query.email;
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const cursor = orderCollection.find(query);
+                const order = await cursor.toArray();
+                res.send(order);
+            }
+            else {
+                res.status(403).send({ message: 'frobidden access' });
+            }
+        });
 
     }
     finally {
