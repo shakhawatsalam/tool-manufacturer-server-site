@@ -23,6 +23,8 @@ async function run() {
     try {
         await client.connect();
         const toolsCollection = client.db('tools_manufacturer').collection('tools');
+        const usersCollection = client.db('tools_manufacturer').collection('users');
+        const orderCollection = client.db('tools_manufacturer').collection('order');
 
 
         // All Tools Api
@@ -40,6 +42,29 @@ async function run() {
             const tool = await toolsCollection.findOne(query);
             res.send(tool);
         });
+        //usetoken put and set jwt for user
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc, options);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+            res.send({ result, token });
+        });
+
+
+        //add order to database
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            console.log(order);
+            const result = await orderCollection.insertOne(order);
+            res.send({ success: true, result });
+        })
+
     }
     finally {
 
