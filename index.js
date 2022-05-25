@@ -7,6 +7,7 @@ const middlewareWrapper = require('cors');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000;
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 
 //middleware
@@ -55,6 +56,18 @@ async function run() {
             const cursor = toolsCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
+        });
+        //stripe Api
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const product = req.body;
+            const price = product.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
         });
 
         // individual call tools api
@@ -119,6 +132,7 @@ async function run() {
         app.get('/order', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
+            console.log(email);
             if (email === decodedEmail) {
                 const query = { email: email };
                 const cursor = orderCollection.find(query);
@@ -129,14 +143,23 @@ async function run() {
                 res.status(403).send({ message: 'frobidden access' });
             }
         });
+        // Get Order for Payment
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query);
+            res.send(order);
+        })
         //deleting My order
         app.delete('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await orderCollection.deleteOne(query);
             res.send(result);
-            
-        })
+
+        });
+
+
 
     }
     finally {
