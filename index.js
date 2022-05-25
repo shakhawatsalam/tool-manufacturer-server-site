@@ -68,16 +68,31 @@ async function run() {
         app.get('/user', verifyJWT, async (req, res) => {
             const users = await usersCollection.find().toArray();
             res.send(users);
+        });
+        //Req Admin
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin });
+
         })
         //api for adding admin field to usercolloction 
-        app.put('/user/admin/:email',verifyJWT, async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            const filter = { email: email };
-            const updateDoc = {
-                $set: { role: 'admin' },
-            };
-            const result = await usersCollection.updateOne(filter, updateDoc);
-            res.send(result);
+            const requester = req.decoded.email;
+            const requesterAccount = await usersCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: 'admin' },
+                };
+                const result = await usersCollection.updateOne(filter, updateDoc);
+                res.send(result);
+            } else {
+                res.status(403).send({ message: 'forbidden' });
+            }
         });
         //usetoken put and set jwt for user
         app.put('/user/:email', async (req, res) => {
@@ -97,7 +112,6 @@ async function run() {
         //add order to database
         app.post('/order', async (req, res) => {
             const order = req.body;
-            console.log(order);
             const result = await orderCollection.insertOne(order);
             res.send({ success: true, result });
         });
@@ -115,6 +129,14 @@ async function run() {
                 res.status(403).send({ message: 'frobidden access' });
             }
         });
+        //deleting My order
+        app.delete('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
+            res.send(result);
+            
+        })
 
     }
     finally {
