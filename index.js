@@ -48,6 +48,7 @@ async function run() {
         const toolsCollection = client.db('tools_manufacturer').collection('tools');
         const usersCollection = client.db('tools_manufacturer').collection('users');
         const orderCollection = client.db('tools_manufacturer').collection('order');
+        const paymentsCollection = client.db('tools_manufacturer').collection('payments');
 
 
         // All Tools Api
@@ -128,11 +129,26 @@ async function run() {
             const result = await orderCollection.insertOne(order);
             res.send({ success: true, result });
         });
+
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentsCollection.insertOne(payment);
+            const updateOrder = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedDoc)
+
+        })
         // My Order Api
         app.get('/order', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            console.log(email);
             if (email === decodedEmail) {
                 const query = { email: email };
                 const cursor = orderCollection.find(query);
