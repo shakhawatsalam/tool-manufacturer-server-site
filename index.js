@@ -59,6 +59,14 @@ async function run() {
             const tools = await cursor.toArray();
             res.send(tools);
         });
+        // delete api for tools form home page
+        app.delete('/tools/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await toolsCollection.deleteOne(query);
+            res.send(result);
+
+        });
         // Tools post api for adding product
         app.post('/tools', async (req, res) => {
             const tools = req.body;
