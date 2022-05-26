@@ -49,6 +49,7 @@ async function run() {
         const usersCollection = client.db('tools_manufacturer').collection('users');
         const orderCollection = client.db('tools_manufacturer').collection('order');
         const paymentsCollection = client.db('tools_manufacturer').collection('payments');
+        const reviewCollection = client.db('tools_manufacturer').collection('reviews');
 
 
         // All Tools Api
@@ -57,6 +58,12 @@ async function run() {
             const cursor = toolsCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
+        });
+        // Tools post api for adding product
+        app.post('/tools', async (req, res) => {
+            const tools = req.body;
+            const result = await toolsCollection.insertOne(tools);
+            res.send({ success: true, result });
         });
         //stripe Api
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
@@ -173,6 +180,19 @@ async function run() {
             const result = await orderCollection.deleteOne(query);
             res.send(result);
 
+        });
+
+        // add reviews to database post api
+        app.post('/reviews', async (req, res) => {
+            const reviews = req.body;
+            console.log(reviews);
+            const result = await reviewCollection.insertOne(reviews);
+            res.send({ success: true, result });
+        });
+        // get api for reviews 
+        app.get('/reviews', verifyJWT, async (req, res) => {
+            const reviews = await reviewCollection.find().toArray();
+            res.send(reviews);
         });
 
 
