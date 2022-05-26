@@ -50,6 +50,7 @@ async function run() {
         const orderCollection = client.db('tools_manufacturer').collection('order');
         const paymentsCollection = client.db('tools_manufacturer').collection('payments');
         const reviewCollection = client.db('tools_manufacturer').collection('reviews');
+        const profileCollection = client.db('tools_manufacturer').collection('profile');
 
 
         // All Tools Api
@@ -202,6 +203,18 @@ async function run() {
             const reviews = await reviewCollection.find().toArray();
             res.send(reviews);
         });
+
+        //post api for my profile
+        app.post('/profile', verifyJWT, async (req, res) => {
+            const profile = req.body;
+            const result = await profileCollection.insertOne(profile);
+            res.send({ success: true, result });
+        });
+        // get all order
+        // app.get('/order', verifyJWT, async (req, res) => {
+        //     const order = await orderCollection.find().toArray();
+        //     res.send(order);
+        // });
 
 
 
